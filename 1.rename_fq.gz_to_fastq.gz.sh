@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# 重命名 fastq 文件脚本
+# 将 .fq.gz 重命名为 .fastq.gz 以匹配查找规则
+
+# 设置基础目录路径
+BASE_DIR="~/project/HQJ/F25A040007284_MUSifjbR_0916"
+
+# 展开波浪号
+BASE_DIR=$(eval echo "$BASE_DIR")
+
+# 检查目录是否存在
+if [ ! -d "$BASE_DIR" ]; then
+    echo "错误: 目录 $BASE_DIR 不存在"
+    exit 1
+fi
+
+echo "开始重命名文件..."
+echo "工作目录: $BASE_DIR"
+
+# 统计变量
+renamed_count=0
+
+# 遍历所有子目录
+for sample_dir in "$BASE_DIR"/*; do
+    if [ -d "$sample_dir" ]; then
+        sample_name=$(basename "$sample_dir")
+        echo "处理样本目录: $sample_name"
+        
+        # 重命名 _1.fq.gz 文件
+        if [ -f "$sample_dir/${sample_name}_1.fq.gz" ]; then
+            mv "$sample_dir/${sample_name}_1.fq.gz" "$sample_dir/${sample_name}_1.fastq.gz"
+            echo "  重命名: ${sample_name}_1.fq.gz → ${sample_name}_1.fastq.gz"
+            ((renamed_count++))
+        fi
+        
+        # 重命名 _2.fq.gz 文件
+        if [ -f "$sample_dir/${sample_name}_2.fq.gz" ]; then
+            mv "$sample_dir/${sample_name}_2.fq.gz" "$sample_dir/${sample_name}_2.fastq.gz"
+            echo "  重命名: ${sample_name}_2.fq.gz → ${sample_name}_2.fastq.gz"
+            ((renamed_count++))
+        fi
+    fi
+done
+
+echo "重命名完成! 总共重命名了 $renamed_count 个文件"
+
+# 验证重命名结果
+echo ""
+echo "验证重命名结果:"
+for sample_dir in "$BASE_DIR"/*; do
+    if [ -d "$sample_dir" ]; then
+        sample_name=$(basename "$sample_dir")
+        read1_file=$(find "$sample_dir" -name "*_1.fastq.gz" | head -n 1)
+        read2_file=$(find "$sample_dir" -name "*_2.fastq.gz" | head -n 1)
+        
+        if [ -n "$read1_file" ] && [ -n "$read2_file" ]; then
+            echo "✓ $sample_name: 找到成对文件"
+            echo "    READ1: $(basename "$read1_file")"
+            echo "    READ2: $(basename "$read2_file")"
+        else
+            echo "✗ $sample_name: 未找到成对文件"
+        fi
+    fi
+done
